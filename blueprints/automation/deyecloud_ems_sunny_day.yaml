@@ -2,7 +2,7 @@ blueprint:
   name: Deye Cloud EMS - Sunny Day
   description: Manually or on-trigger apply the sunny day TOU profile.
   domain: automation
-  source_url: https://github.com/num_p/hass-deyecloud-ems
+  source_url: https://github.com/numpea00/hass-deyecloud-ems
   author: Deye Cloud EMS
   input:
     device_id:

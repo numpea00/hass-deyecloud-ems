@@ -4,7 +4,7 @@ blueprint:
     Four-step Thai TOU automation: morning forecast profile, mid-day solar check,
     peak discharge strategy, and off-peak reset.
   domain: automation
-  source_url: https://github.com/num_p/hass-deyecloud-ems
+  source_url: https://github.com/numpea00/hass-deyecloud-ems
   author: Deye Cloud EMS
   input:
     device_id:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
@@ -119,6 +120,76 @@ class DeyeCloudEMSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=STEP_USER_SCHEMA,
+            errors=errors,
+        )
+
+    async def async_step_reauth(
+        self, entry_data: Mapping[str, Any]
+    ) -> ConfigFlowResult:
+        """Handle reauthentication."""
+        self.context["title_placeholders"] = {
+            "name": entry_data.get(CONF_USERNAME, DOMAIN),
+        }
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm reauthentication with updated credentials."""
+        errors: dict[str, str] = {}
+        reauth_entry = self._get_reauth_entry()
+
+        if user_input is not None:
+            user_input = _normalize(user_input)
+            data = {
+                **reauth_entry.data,
+                CONF_USERNAME: user_input[CONF_USERNAME],
+                CONF_PASSWORD: user_input[CONF_PASSWORD],
+                CONF_APP_ID: user_input[CONF_APP_ID],
+                CONF_APP_SECRET: user_input[CONF_APP_SECRET],
+                CONF_BASE_URL: user_input[CONF_BASE_URL],
+            }
+            if user_input.get(CONF_COMPANY_ID):
+                data[CONF_COMPANY_ID] = user_input[CONF_COMPANY_ID]
+            else:
+                data.pop(CONF_COMPANY_ID, None)
+            if CONF_SCAN_INTERVAL in user_input:
+                data[CONF_SCAN_INTERVAL] = user_input[CONF_SCAN_INTERVAL]
+
+            try:
+                await _validate(self.hass, data)
+            except NoStationsFound:
+                errors["base"] = "no_stations"
+            except DeyeCloudApiError:
+                errors["base"] = "cannot_connect"
+            except Exception:  # noqa: BLE001
+                errors["base"] = "unknown"
+            else:
+                self.hass.config_entries.async_update_entry(
+                    reauth_entry,
+                    data=data,
+                    title=f"Deye Cloud EMS ({data[CONF_USERNAME]})",
+                )
+                await self.hass.config_entries.async_reload(reauth_entry.entry_id)
+                return self.async_abort(reason="reauth_successful")
+
+        current = dict(reauth_entry.data)
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_USERNAME, default=current.get(CONF_USERNAME, "")): str,
+                vol.Required(CONF_PASSWORD): str,
+                vol.Required(CONF_APP_ID, default=current.get(CONF_APP_ID, "")): str,
+                vol.Required(CONF_APP_SECRET): str,
+                vol.Required(
+                    CONF_BASE_URL,
+                    default=current.get(CONF_BASE_URL, DEFAULT_BASE_URL_EU),
+                ): str,
+                vol.Optional(CONF_COMPANY_ID, default=current.get(CONF_COMPANY_ID, "")): str,
+            }
+        )
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=schema,
             errors=errors,
         )
 

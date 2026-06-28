@@ -60,6 +60,7 @@ class DeyeCloudEMSMaxChargeCurrentNumber(DeyeCloudEMSDeviceEntity, NumberEntity)
             await self.coordinator.client.set_battery_parameter(
                 self._device_sn, "maxChargeCurrent", int(value)
             )
+            self.coordinator.async_invalidate_config_cache()
             await self.coordinator.async_request_refresh()
         except DeyeCloudApiError as err:
             _LOGGER.error("Failed to set max charge current: %s", err)
@@ -88,6 +89,7 @@ class DeyeCloudEMSMaxDischargeCurrentNumber(DeyeCloudEMSDeviceEntity, NumberEnti
             await self.coordinator.client.set_battery_parameter(
                 self._device_sn, "maxDischargeCurrent", int(value)
             )
+            self.coordinator.async_invalidate_config_cache()
             await self.coordinator.async_request_refresh()
         except DeyeCloudApiError as err:
             _LOGGER.error("Failed to set max discharge current: %s", err)
@@ -114,6 +116,7 @@ class DeyeCloudEMSMaxSellPowerNumber(DeyeCloudEMSDeviceEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         try:
             await self.coordinator.client.set_max_sell_power(self._device_sn, int(value))
+            self.coordinator.async_invalidate_config_cache()
             await self.coordinator.async_request_refresh()
         except DeyeCloudApiError as err:
             _LOGGER.error("Failed to set max sell power: %s", err)
@@ -161,6 +164,7 @@ class DeyeCloudEMSBatteryReserveNumber(DeyeCloudEMSDeviceEntity, NumberEntity):
         )
         try:
             await self.coordinator.client.set_tou_config(self._device_sn, slots)
+            self.coordinator.async_invalidate_config_cache()
             await self.coordinator.async_request_refresh()
         except DeyeCloudApiError as err:
             _LOGGER.error("Failed to set battery reserve SOC: %s", err)

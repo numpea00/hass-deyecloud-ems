@@ -80,6 +80,7 @@ class DeyeCloudEMSSolarSellSwitch(DeyeCloudEMSDeviceEntity, SwitchEntity):
     async def _set_solar_sell(self, enabled: bool) -> None:
         try:
             await self.coordinator.client.set_solar_sell(self._device_sn, enabled)
+            self.coordinator.async_invalidate_config_cache()
             await self.coordinator.async_request_refresh()
         except DeyeCloudApiError as err:
             _LOGGER.error("Failed to set solar sell for %s: %s", self._device_sn, err)
@@ -113,6 +114,7 @@ class DeyeCloudEMSBatteryChargeSwitch(DeyeCloudEMSDeviceEntity, SwitchEntity):
             await self.coordinator.client.set_battery_mode(
                 self._device_sn, enabled, "GRID_CHARGE"
             )
+            self.coordinator.async_invalidate_config_cache()
             await self.coordinator.async_request_refresh()
         except DeyeCloudApiError as err:
             _LOGGER.error("Failed to set battery charge mode for %s: %s", self._device_sn, err)

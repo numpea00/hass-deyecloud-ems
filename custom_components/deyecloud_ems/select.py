@@ -55,6 +55,7 @@ class DeyeCloudEMSWorkModeSelect(DeyeCloudEMSDeviceEntity, SelectEntity):
             return
         try:
             await self.coordinator.client.set_work_mode(self._device_sn, option)
+            self.coordinator.async_invalidate_config_cache()
             await self.coordinator.async_request_refresh()
         except DeyeCloudApiError as err:
             _LOGGER.error("Failed to set work mode: %s", err)
@@ -81,6 +82,7 @@ class DeyeCloudEMSEnergyPatternSelect(DeyeCloudEMSDeviceEntity, SelectEntity):
             return
         try:
             await self.coordinator.client.set_energy_pattern(self._device_sn, option)
+            self.coordinator.async_invalidate_config_cache()
             await self.coordinator.async_request_refresh()
         except DeyeCloudApiError as err:
             _LOGGER.error("Failed to set energy pattern: %s", err)

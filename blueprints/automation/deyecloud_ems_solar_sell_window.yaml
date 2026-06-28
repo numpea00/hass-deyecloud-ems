@@ -2,7 +2,7 @@ blueprint:
   name: Deye Cloud EMS - Solar Sell Window
   description: Enable solar sell during peak when SOC is high; disable when SOC is low.
   domain: automation
-  source_url: https://github.com/num_p/hass-deyecloud-ems
+  source_url: https://github.com/numpea00/hass-deyecloud-ems
   author: Deye Cloud EMS
   input:
     device_id:

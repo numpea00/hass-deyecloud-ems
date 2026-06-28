@@ -2,7 +2,7 @@ blueprint:
   name: Deye Cloud EMS - Smart Night Charge
   description: Decide whether to grid-charge tonight based on tomorrow solar forecast.
   domain: automation
-  source_url: https://github.com/num_p/hass-deyecloud-ems
+  source_url: https://github.com/numpea00/hass-deyecloud-ems
   author: Deye Cloud EMS
   input:
     device_id:

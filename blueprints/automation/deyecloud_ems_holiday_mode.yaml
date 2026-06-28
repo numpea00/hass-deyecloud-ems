@@ -2,7 +2,7 @@ blueprint:
   name: Deye Cloud EMS - Holiday Mode
   description: Apply flat holiday TOU profile when Thai public holiday is detected.
   domain: automation
-  source_url: https://github.com/num_p/hass-deyecloud-ems
+  source_url: https://github.com/numpea00/hass-deyecloud-ems
   author: Deye Cloud EMS
   input:
     device_id:

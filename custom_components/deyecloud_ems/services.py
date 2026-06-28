@@ -58,6 +58,12 @@ def _get_runtime(hass: HomeAssistant, entry_id: str) -> dict[str, Any] | None:
     return hass.data.get(DOMAIN, {}).get(entry_id)
 
 
+async def _refresh_after_control(coordinator: DeyeCloudEMSCoordinator) -> None:
+    """Refresh live data and invalidate cached inverter config."""
+    coordinator.async_invalidate_config_cache()
+    await coordinator.async_request_refresh()
+
+
 async def _resolve_context(
     hass: HomeAssistant, call: ServiceCall
 ) -> tuple[DeyeCloudEMSCoordinator, TouProfileManager, str] | None:
@@ -98,6 +104,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 tou_items,
                 call.data.get("timeout_seconds", 30),
             )
+            await _refresh_after_control(coordinator)
         except DeyeCloudApiError as err:
             _LOGGER.error("set_tou failed: %s", err)
 
@@ -119,6 +126,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 EVENT_PROFILE_APPLIED,
                 {"device_sn": device_sn, "profile_name": profile_name},
             )
+            await _refresh_after_control(coordinator)
         except DeyeCloudApiError as err:
             _LOGGER.error("apply_tou_profile failed: %s", err)
 
@@ -137,6 +145,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
             slots = [{"startTime": "00:00", "endTime": "24:00", "soc": soc, "chargeMode": "HOLD"}]
         try:
             await coordinator.client.set_tou_config(device_sn, slots)
+            await _refresh_after_control(coordinator)
         except DeyeCloudApiError as err:
             _LOGGER.error("set_reserve failed: %s", err)
 
@@ -157,6 +166,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         )
         try:
             await coordinator.client.set_tou_config(device_sn, slots)
+            await _refresh_after_control(coordinator)
         except DeyeCloudApiError as err:
             _LOGGER.error("smart_reserve failed: %s", err)
 
@@ -189,6 +199,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         try:
             await coordinator.client.set_tou_config(device_sn, slots)
             await coordinator.client.set_battery_mode(device_sn, True, "GRID_CHARGE")
+            await _refresh_after_control(coordinator)
         except DeyeCloudApiError as err:
             _LOGGER.error("smart_night_charge failed: %s", err)
 
@@ -203,7 +214,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 call.data["parameter"],
                 call.data["value"],
             )
-            await coordinator.async_request_refresh()
+            await _refresh_after_control(coordinator)
         except DeyeCloudApiError as err:
             _LOGGER.error("set_battery_parameter failed: %s", err)
 
@@ -214,7 +225,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         coordinator, _, device_sn = ctx
         try:
             await coordinator.client.set_work_mode(device_sn, call.data["work_mode"])
-            await coordinator.async_request_refresh()
+            await _refresh_after_control(coordinator)
         except DeyeCloudApiError as err:
             _LOGGER.error("set_work_mode failed: %s", err)
 
@@ -227,7 +238,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
             await coordinator.client.set_energy_pattern(
                 device_sn, call.data["energy_pattern"]
             )
-            await coordinator.async_request_refresh()
+            await _refresh_after_control(coordinator)
         except DeyeCloudApiError as err:
             _LOGGER.error("set_energy_pattern failed: %s", err)
 
@@ -238,7 +249,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         coordinator, _, device_sn = ctx
         try:
             await coordinator.client.set_solar_sell(device_sn, call.data["enabled"])
-            await coordinator.async_request_refresh()
+            await _refresh_after_control(coordinator)
         except DeyeCloudApiError as err:
             _LOGGER.error("set_solar_sell failed: %s", err)
 

@@ -1,4 +1,4 @@
-"""Dvector Deye Cloud API client."""
+"""Deye Cloud API client."""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ import time
 from typing import Any
 
 import aiohttp
-import async_timeout
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -85,7 +84,7 @@ class DeyeCloudClient:
             headers["Authorization"] = f"Bearer {self._access_token}"
 
         try:
-            async with async_timeout.timeout(API_TIMEOUT):
+            async with asyncio.timeout(API_TIMEOUT):
                 if method.upper() == "GET":
                     async with session.get(url, params=payload, headers=headers) as response:
                         response.raise_for_status()
@@ -124,7 +123,7 @@ class DeyeCloudClient:
 
         session = await self._get_session()
         try:
-            async with async_timeout.timeout(API_TIMEOUT):
+            async with asyncio.timeout(API_TIMEOUT):
                 async with session.post(
                     url,
                     json=payload,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import timedelta
 from typing import Any
 
@@ -14,9 +15,11 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+CONFIG_REFRESH_SECONDS = 300
+
 
 class DeyeCloudEMSCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Coordinator fetching Deye device and station data."""
+    """Coordinator fetching Deye Cloud device and station data."""
 
     def __init__(
         self,
@@ -34,6 +37,32 @@ class DeyeCloudEMSCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.devices: list[str] = []
         self.device_info: dict[str, dict[str, Any]] = {}
         self.stations: list[dict[str, Any]] = []
+        self._device_configs: dict[str, dict[str, Any]] = {}
+        self._last_config_fetch = 0.0
+        self._force_config_refresh = True
+
+    def async_invalidate_config_cache(self) -> None:
+        """Force config endpoints to refresh on the next update."""
+        self._force_config_refresh = True
+
+    async def _async_fetch_device_configs(self) -> dict[str, dict[str, Any]]:
+        device_configs: dict[str, dict[str, Any]] = {}
+        for device_sn in self.devices:
+            config: dict[str, Any] = {}
+            try:
+                config["battery"] = await self.client.get_battery_config(device_sn)
+            except DeyeCloudApiError:
+                pass
+            try:
+                config["system"] = await self.client.get_system_config(device_sn)
+            except DeyeCloudApiError:
+                pass
+            try:
+                config["tou"] = await self.client.get_tou_config(device_sn)
+            except DeyeCloudApiError:
+                pass
+            device_configs[device_sn] = config
+        return device_configs
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
@@ -47,6 +76,7 @@ class DeyeCloudEMSCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 inverter_devices = await self.client.get_station_devices(station_ids)
                 self.devices = [d["deviceSn"] for d in inverter_devices]
                 self.device_info = {d["deviceSn"]: d for d in inverter_devices}
+                self._force_config_refresh = True
 
             device_data = await self.client.get_device_latest_data(self.devices)
 
@@ -61,29 +91,22 @@ class DeyeCloudEMSCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     except DeyeCloudApiError as err:
                         _LOGGER.debug("Station latest failed for %s: %s", station_id, err)
 
-            device_configs: dict[str, dict[str, Any]] = {}
-            for device_sn in self.devices:
-                config: dict[str, Any] = {}
-                try:
-                    config["battery"] = await self.client.get_battery_config(device_sn)
-                except DeyeCloudApiError:
-                    pass
-                try:
-                    config["system"] = await self.client.get_system_config(device_sn)
-                except DeyeCloudApiError:
-                    pass
-                try:
-                    config["tou"] = await self.client.get_tou_config(device_sn)
-                except DeyeCloudApiError:
-                    pass
-                device_configs[device_sn] = config
+            now = time.monotonic()
+            if (
+                self._force_config_refresh
+                or not self._device_configs
+                or now - self._last_config_fetch >= CONFIG_REFRESH_SECONDS
+            ):
+                self._device_configs = await self._async_fetch_device_configs()
+                self._last_config_fetch = now
+                self._force_config_refresh = False
 
             devices_payload: dict[str, Any] = {}
             for device_sn in self.devices:
                 devices_payload[device_sn] = {
                     "info": self.device_info.get(device_sn, {}),
                     "data": device_data.get(device_sn, {}),
-                    "config": device_configs.get(device_sn, {}),
+                    "config": self._device_configs.get(device_sn, {}),
                 }
 
             return {
