@@ -199,11 +199,8 @@ class DeyeCloudEMSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return DeyeCloudEMSOptionsFlowHandler(config_entry)
 
 
-class DeyeCloudEMSOptionsFlowHandler(config_entries.OptionsFlow):
+class DeyeCloudEMSOptionsFlowHandler(config_entries.OptionsFlowWithConfigEntry):
     """Handle options flow."""
-
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None

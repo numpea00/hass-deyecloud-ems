@@ -41,7 +41,7 @@ PEAK_END = time(22, 0)
 def is_holiday(day: date | None = None) -> bool:
     """Return True if the given date is a Thai public holiday."""
     day = day or datetime.now(DEFAULT_TIMEZONE).date()
-    return day in THAI_PUBLIC_HOLAYS_2026
+    return day in THAI_PUBLIC_HOLIDAYS_2026
 
 
 def is_weekend(day: date | None = None) -> bool:
