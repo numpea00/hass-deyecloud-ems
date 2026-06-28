@@ -95,40 +95,85 @@ def map_unit(key: str, api_unit: str | None) -> str | None:
         return unit
 
     key_lower = key.lower()
+    if "temp" in key_lower or key.startswith("INV_T"):
+        return UnitOfTemperature.CELSIUS
+    if "frequency" in key_lower or key.startswith("A_F"):
+        return UnitOfFrequency.HERTZ
     if "power" in key_lower and "k" not in key_lower:
         return UnitOfPower.WATT
     if "energy" in key_lower or key.startswith("Et") or "Etdy" in key:
         return UnitOfEnergy.KILO_WATT_HOUR
     if "voltage" in key_lower or key.startswith("DV"):
         return UnitOfElectricPotential.VOLT
-    if "current" in key_lower or key.startswith("DC") or key.startswith("AC"):
+    if "current" in key_lower or _looks_like_current_key(key):
         return UnitOfElectricCurrent.AMPERE
-    if "frequency" in key_lower or key.startswith("A_F"):
-        return UnitOfFrequency.HERTZ
-    if "temp" in key_lower or key.startswith("INV_T"):
-        return UnitOfTemperature.CELSIUS
     if "soc" in key_lower:
         return PERCENTAGE
     return None
 
 
-def detect_device_class(key: str, api_name: str | None = None) -> SensorDeviceClass | None:
-    """Infer sensor device class from API key/name."""
+def _looks_like_current_key(key: str) -> bool:
+    """Return True when a short AC/DC key likely means current, not temperature etc."""
+    if "current" in key.lower():
+        return True
+    upper = key.upper()
+    for prefix in ("DC", "AC"):
+        if not upper.startswith(prefix):
+            continue
+        suffix = upper[len(prefix) :]
+        if suffix.isdigit():
+            return True
+        if suffix.endswith("I") and suffix[:-1].isdigit():
+            return True
+    return False
+
+
+def device_class_from_unit(unit: str | None) -> SensorDeviceClass | None:
+    """Map a resolved HA unit to the matching sensor device class."""
+    if not unit:
+        return None
+    if unit in {UnitOfFrequency.HERTZ, "Hz"}:
+        return SensorDeviceClass.FREQUENCY
+    if unit in {UnitOfTemperature.CELSIUS, "°C", "℃"}:
+        return SensorDeviceClass.TEMPERATURE
+    if unit == UnitOfPower.WATT:
+        return SensorDeviceClass.POWER
+    if unit == UnitOfElectricPotential.VOLT:
+        return SensorDeviceClass.VOLTAGE
+    if unit == UnitOfElectricCurrent.AMPERE:
+        return SensorDeviceClass.CURRENT
+    if unit == UnitOfEnergy.KILO_WATT_HOUR:
+        return SensorDeviceClass.ENERGY
+    if unit == PERCENTAGE:
+        return SensorDeviceClass.BATTERY
+    return None
+
+
+def detect_device_class(
+    key: str,
+    api_name: str | None = None,
+    unit: str | None = None,
+) -> SensorDeviceClass | None:
+    """Infer sensor device class from API unit, key, and name."""
+    from_unit = device_class_from_unit(unit)
+    if from_unit is not None:
+        return from_unit
+
     text = f"{key} {api_name or ''}".lower()
-    if "soc" in text or "battery" in text and "%" in text:
+    if "soc" in text or ("battery" in text and "%" in text):
         return SensorDeviceClass.BATTERY
     if "energy" in text or key.startswith("Et"):
         return SensorDeviceClass.ENERGY
-    if "power" in text:
+    if "power" in text and "frequency" not in text:
         return SensorDeviceClass.POWER
     if "voltage" in text or key.startswith("DV"):
         return SensorDeviceClass.VOLTAGE
-    if "current" in text or key.startswith("DC") or key.startswith("AC"):
-        return SensorDeviceClass.CURRENT
-    if "frequency" in text or key.startswith("A_F"):
-        return SensorDeviceClass.FREQUENCY
     if "temp" in text or key.startswith("INV_T"):
         return SensorDeviceClass.TEMPERATURE
+    if "frequency" in text or key.startswith("A_F"):
+        return SensorDeviceClass.FREQUENCY
+    if "current" in text or _looks_like_current_key(key):
+        return SensorDeviceClass.CURRENT
     return None
 
 

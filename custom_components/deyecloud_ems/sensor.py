@@ -101,8 +101,9 @@ class DeyeCloudEMSFieldSensor(DeyeCloudEMSDeviceEntity, SensorEntity):
             format_sensor_name(field_key, api_name),
         )
         self._field_key = field_key
-        self._attr_native_unit_of_measurement = map_unit(field_key, field_meta.get("unit"))
-        self._attr_device_class = detect_device_class(field_key, api_name)
+        unit = map_unit(field_key, field_meta.get("unit"))
+        self._attr_native_unit_of_measurement = unit
+        self._attr_device_class = detect_device_class(field_key, api_name, unit)
         self._attr_state_class = detect_state_class(field_key)
 
     @property
