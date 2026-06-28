@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import DeyeCloudApiError
 from .config_helpers import get_current_tou_soc, normalize_number
-from .const import DOMAIN, PROFILE_MANAGER
+from .const import DOMAIN, MIN_BATTERY_RESERVE_SOC, PROFILE_MANAGER
 from .tou_helpers import apply_soc_to_tou_items
 from .coordinator import DeyeCloudEMSCoordinator
 from .entity import DeyeCloudEMSDeviceEntity
@@ -149,7 +149,7 @@ class DeyeCloudEMSMaxSellPowerNumber(DeyeCloudEMSDeviceEntity, NumberEntity):
 class DeyeCloudEMSBatteryReserveNumber(DeyeCloudEMSDeviceEntity, NumberEntity):
     """Battery reserve SOC applied via TOU update."""
 
-    _attr_native_min_value = 0
+    _attr_native_min_value = MIN_BATTERY_RESERVE_SOC
     _attr_native_max_value = 100
     _attr_native_step = 1
     _attr_mode = NumberMode.BOX
@@ -179,7 +179,10 @@ class DeyeCloudEMSBatteryReserveNumber(DeyeCloudEMSDeviceEntity, NumberEntity):
             or []
         )
         if existing_items:
-            items = apply_soc_to_tou_items(existing_items, int(value))
+            items = apply_soc_to_tou_items(
+                existing_items,
+                max(MIN_BATTERY_RESERVE_SOC, int(value)),
+            )
         else:
             active = self._profile_manager.active_profile or "thai_sunny"
             items = self._profile_manager.apply_reserve_to_slots(

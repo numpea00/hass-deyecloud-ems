@@ -12,7 +12,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
 from .api import DeyeCloudApiError
-from .const import DOMAIN, EVENT_PROFILE_APPLIED
+from .const import DOMAIN, EVENT_PROFILE_APPLIED, MIN_BATTERY_RESERVE_SOC
 from .coordinator import DeyeCloudEMSCoordinator
 from .tou_helpers import apply_soc_to_tou_items
 from .tou_profile import TouProfileManager
@@ -165,7 +165,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
         forecast_kwh = float(call.data["forecast_kwh"])
         target_kwh = float(call.data.get("target_kwh", 0))
         battery_capacity = float(call.data.get("battery_capacity_kwh", 10))
-        reserve = max(5, min(90, int((target_kwh / battery_capacity) * 100)))
+        reserve = max(MIN_BATTERY_RESERVE_SOC, min(90, int((target_kwh / battery_capacity) * 100)))
         if forecast_kwh < target_kwh:
             reserve = min(90, reserve + 20)
         active = profile_manager.active_profile or "thai_rainy"

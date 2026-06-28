@@ -12,7 +12,7 @@ Most existing Deye integrations are read-only. This integration adds official cl
 - **Work mode** and **energy pattern** control
 - **Solar sell** and **grid charge** switches
 - Thai TOU awareness (Peak 09:00–22:00 Mon–Fri, Off-Peak otherwise)
-- Built-in profiles: `thai_sunny`, `thai_rainy`, `thai_holiday`, `ev_night`
+- Built-in profiles: `thai_sunny`, `thai_rainy`, `thai_holiday` (minimum reserve **20%** for battery health)
 - Services for automations and 6 blueprints
 
 ## Installation
@@ -132,7 +132,7 @@ Import blueprints via **Settings → Automations → Blueprints → Import Bluep
 ## Built-in TOU Profiles
 
 ### thai_sunny
-Low reserve during solar hours, discharge during peak.
+Solar day with 20% minimum reserve; discharge during peak down to 20%.
 
 ### thai_rainy
 Grid charge at night, hold reserve during cloudy day.
@@ -140,8 +140,7 @@ Grid charge at night, hold reserve during cloudy day.
 ### thai_holiday
 Flat moderate reserve (off-peak all day on holidays).
 
-### ev_night
-High off-peak reserve for EV + battery charging.
+Minimum battery reserve SOC is **20%** across profiles to reduce deep-discharge wear. EV charging on a separate circuit is not managed by these profiles.
 
 ## Cost tracking (optional HA helpers)
 

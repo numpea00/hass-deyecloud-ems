@@ -36,7 +36,7 @@ set_tou:
 
 apply_tou_profile:
   name: Apply TOU profile
-  description: Apply a named TOU profile (thai_sunny, thai_rainy, thai_holiday, ev_night).
+  description: Apply a named TOU profile (thai_sunny, thai_rainy, thai_holiday).
   fields:
     device_id:
       name: Device

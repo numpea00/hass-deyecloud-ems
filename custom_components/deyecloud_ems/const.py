@@ -54,16 +54,19 @@ TOU_CHARGE_MODES: Final = [
     "HOLD",
 ]
 
-# Built-in TOU profile presets
+# Minimum battery reserve SOC — protects battery health (avoid deep discharge).
+MIN_BATTERY_RESERVE_SOC: Final = 20
+
+# Built-in TOU profile presets (EV on separate circuit — no ev_night profile).
 DEFAULT_TOU_PROFILES: Final = {
     "thai_sunny": {
-        "description": "Sunny day — low reserve during solar, discharge during peak",
+        "description": "Sunny day — solar hours with 20% floor, discharge during peak",
         "slots": [
             {"startTime": "00:00", "endTime": "04:00", "soc": 20, "chargeMode": "GRID_CHARGE"},
-            {"startTime": "04:00", "endTime": "09:00", "soc": 15, "chargeMode": "GRID_CHARGE"},
-            {"startTime": "09:00", "endTime": "12:00", "soc": 5, "chargeMode": "SOLAR_CHARGE"},
-            {"startTime": "12:00", "endTime": "17:00", "soc": 5, "chargeMode": "SOLAR_CHARGE"},
-            {"startTime": "17:00", "endTime": "22:00", "soc": 5, "chargeMode": "DISCHARGE"},
+            {"startTime": "04:00", "endTime": "09:00", "soc": 20, "chargeMode": "GRID_CHARGE"},
+            {"startTime": "09:00", "endTime": "12:00", "soc": 20, "chargeMode": "SOLAR_CHARGE"},
+            {"startTime": "12:00", "endTime": "17:00", "soc": 20, "chargeMode": "SOLAR_CHARGE"},
+            {"startTime": "17:00", "endTime": "22:00", "soc": 20, "chargeMode": "DISCHARGE"},
             {"startTime": "22:00", "endTime": "24:00", "soc": 20, "chargeMode": "GRID_CHARGE"},
         ],
     },
@@ -74,7 +77,7 @@ DEFAULT_TOU_PROFILES: Final = {
             {"startTime": "04:00", "endTime": "09:00", "soc": 65, "chargeMode": "GRID_CHARGE"},
             {"startTime": "09:00", "endTime": "12:00", "soc": 50, "chargeMode": "HOLD"},
             {"startTime": "12:00", "endTime": "17:00", "soc": 50, "chargeMode": "HOLD"},
-            {"startTime": "17:00", "endTime": "22:00", "soc": 30, "chargeMode": "DISCHARGE"},
+            {"startTime": "17:00", "endTime": "22:00", "soc": 20, "chargeMode": "DISCHARGE"},
             {"startTime": "22:00", "endTime": "24:00", "soc": 70, "chargeMode": "GRID_CHARGE"},
         ],
     },
@@ -87,17 +90,6 @@ DEFAULT_TOU_PROFILES: Final = {
             {"startTime": "12:00", "endTime": "16:00", "soc": 30, "chargeMode": "HOLD"},
             {"startTime": "16:00", "endTime": "20:00", "soc": 30, "chargeMode": "HOLD"},
             {"startTime": "20:00", "endTime": "24:00", "soc": 30, "chargeMode": "HOLD"},
-        ],
-    },
-    "ev_night": {
-        "description": "EV night charging — high off-peak reserve for EV + battery",
-        "slots": [
-            {"startTime": "00:00", "endTime": "04:00", "soc": 90, "chargeMode": "GRID_CHARGE"},
-            {"startTime": "04:00", "endTime": "09:00", "soc": 85, "chargeMode": "GRID_CHARGE"},
-            {"startTime": "09:00", "endTime": "12:00", "soc": 40, "chargeMode": "HOLD"},
-            {"startTime": "12:00", "endTime": "17:00", "soc": 40, "chargeMode": "HOLD"},
-            {"startTime": "17:00", "endTime": "22:00", "soc": 40, "chargeMode": "HOLD"},
-            {"startTime": "22:00", "endTime": "24:00", "soc": 90, "chargeMode": "GRID_CHARGE"},
         ],
     },
 }

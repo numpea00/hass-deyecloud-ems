@@ -9,7 +9,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
-from .const import DEFAULT_TOU_PROFILES, DOMAIN, STORAGE_KEY, STORAGE_VERSION
+from .const import DEFAULT_TOU_PROFILES, DOMAIN, MIN_BATTERY_RESERVE_SOC, STORAGE_KEY, STORAGE_VERSION
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +41,20 @@ class TouProfileManager:
             self._profiles = stored.get("profiles", {})
             self._active_profile = stored.get("active_profile")
         else:
-            self._profiles = copy.deepcopy(DEFAULT_TOU_PROFILES)
+            self._profiles = {}
+
+        changed = False
+        for name, profile in DEFAULT_TOU_PROFILES.items():
+            self._profiles[name] = copy.deepcopy(profile)
+            changed = True
+
+        if "ev_night" in self._profiles:
+            del self._profiles["ev_night"]
+            changed = True
+            if self._active_profile == "ev_night":
+                self._active_profile = "thai_sunny"
+
+        if changed or not stored:
             await self.async_save()
 
     async def async_save(self) -> None:
@@ -93,7 +106,8 @@ class TouProfileManager:
 
     def apply_reserve_to_slots(self, slots: list[dict[str, Any]], soc: int) -> list[dict[str, Any]]:
         """Return slots with SOC updated for the current time window."""
+        clamped = max(MIN_BATTERY_RESERVE_SOC, min(100, int(soc)))
         updated = copy.deepcopy(slots)
         for slot in updated:
-            slot["soc"] = soc
+            slot["soc"] = clamped
         return updated
