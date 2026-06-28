@@ -18,7 +18,7 @@ from homeassistant.helpers.typing import StateType
 
 from .const import DOMAIN, PROFILE_MANAGER, SENSOR_DEFINITIONS
 from .coordinator import DeyeCloudEMSCoordinator
-from .entity import DeyeCloudEMSDeviceEntity
+from .entity import DeyeCloudEMSDeviceEntity, thai_tou_device_info
 from .thai_tou import current_period, current_rate_thb, predict_soc_at_hour
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,9 +53,9 @@ async def async_setup_entry(
 
     entities.extend(
         [
-            DeyeCloudEMSThaiRateSensor(entry.entry_id),
-            DeyeCloudEMSThaiPeriodSensor(entry.entry_id),
-            DeyeCloudEMSActiveProfileSensor(entry.entry_id, profile_manager),
+            DeyeCloudEMSThaiRateSensor(entry),
+            DeyeCloudEMSThaiPeriodSensor(entry),
+            DeyeCloudEMSActiveProfileSensor(entry, profile_manager),
         ]
     )
 
@@ -164,9 +164,9 @@ class DeyeCloudEMSThaiRateSensor(SensorEntity):
     _attr_icon = "mdi:currency-thb"
     _attr_native_unit_of_measurement = "THB/kWh"
 
-    def __init__(self, entry_id: str) -> None:
-        self._attr_unique_id = f"{entry_id}_thai_tou_rate"
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry_id)}}
+    def __init__(self, entry: ConfigEntry) -> None:
+        self._attr_unique_id = f"{entry.entry_id}_thai_tou_rate"
+        self._attr_device_info = thai_tou_device_info(entry)
 
     @property
     def native_value(self) -> StateType:
@@ -179,9 +179,9 @@ class DeyeCloudEMSThaiPeriodSensor(SensorEntity):
     _attr_name = "Thai TOU Period"
     _attr_icon = "mdi:clock-outline"
 
-    def __init__(self, entry_id: str) -> None:
-        self._attr_unique_id = f"{entry_id}_thai_tou_period"
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry_id)}}
+    def __init__(self, entry: ConfigEntry) -> None:
+        self._attr_unique_id = f"{entry.entry_id}_thai_tou_period"
+        self._attr_device_info = thai_tou_device_info(entry)
 
     @property
     def native_value(self) -> StateType:
@@ -194,10 +194,10 @@ class DeyeCloudEMSActiveProfileSensor(SensorEntity):
     _attr_name = "Active TOU Profile"
     _attr_icon = "mdi:calendar-clock"
 
-    def __init__(self, entry_id: str, profile_manager: Any) -> None:
+    def __init__(self, entry: ConfigEntry, profile_manager: Any) -> None:
         self._profile_manager = profile_manager
-        self._attr_unique_id = f"{entry_id}_active_tou_profile"
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry_id)}}
+        self._attr_unique_id = f"{entry.entry_id}_active_tou_profile"
+        self._attr_device_info = thai_tou_device_info(entry)
 
     @property
     def native_value(self) -> StateType:

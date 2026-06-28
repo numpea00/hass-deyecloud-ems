@@ -4,10 +4,21 @@ from __future__ import annotations
 
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import DeyeCloudEMSCoordinator
+
+
+def thai_tou_device_info(entry: ConfigEntry) -> dict[str, Any]:
+    """Device info for account-level Thai TOU helper entities."""
+    return {
+        "identifiers": {(DOMAIN, entry.entry_id)},
+        "name": "Thai TOU",
+        "manufacturer": "Deye",
+        "model": "Cloud EMS",
+    }
 
 
 class DeyeCloudEMSDeviceEntity(CoordinatorEntity[DeyeCloudEMSCoordinator]):
