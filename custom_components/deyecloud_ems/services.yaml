@@ -178,7 +178,7 @@ set_battery_parameter:
     parameter:
       name: Parameter name
       required: true
-      example: maxChargeCurrent
+      example: MAX_CHARGE_CURRENT
     value:
       name: Value
       required: true

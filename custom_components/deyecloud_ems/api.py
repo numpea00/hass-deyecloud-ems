@@ -265,14 +265,19 @@ class DeyeCloudClient:
         parameter: str,
         value: int | float,
     ) -> dict[str, Any]:
+        from .parameter_helpers import normalize_battery_paramter_type
+
+        paramter_type = normalize_battery_paramter_type(parameter)
+        payload = {
+            "deviceSn": device_sn,
+            "paramterType": paramter_type,
+            "value": int(value),
+        }
+        _LOGGER.debug("Battery parameter update for %s: %s", device_sn, payload)
         return await self._request(
             "POST",
             "/order/battery/parameter/update",
-            {
-                "deviceSn": device_sn,
-                "parameterName": parameter,
-                "parameterValue": value,
-            },
+            payload,
         )
 
     async def set_tou_config(
@@ -307,10 +312,16 @@ class DeyeCloudClient:
         )
 
     async def set_max_sell_power(self, device_sn: str, power: int) -> dict[str, Any]:
+        payload = {
+            "deviceSn": device_sn,
+            "powerType": "MAX_SELL_POWER",
+            "value": int(power),
+        }
+        _LOGGER.debug("Max sell power update for %s: %s", device_sn, payload)
         return await self._request(
             "POST",
             "/order/sys/power/update",
-            {"deviceSn": device_sn, "maxSellPower": power},
+            payload,
         )
 
     async def test_connection(self) -> bool:
