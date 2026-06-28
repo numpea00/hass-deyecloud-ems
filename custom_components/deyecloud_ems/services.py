@@ -206,7 +206,6 @@ def async_setup_services(hass: HomeAssistant) -> None:
         )
         try:
             await coordinator.client.set_tou_config(device_sn, slots)
-            await coordinator.client.set_battery_mode(device_sn, True, "GRID_CHARGE")
             await _refresh_after_control(coordinator)
         except DeyeCloudApiError as err:
             _LOGGER.error("smart_night_charge failed: %s", err)

@@ -60,36 +60,36 @@ MIN_BATTERY_RESERVE_SOC: Final = 20
 # Built-in TOU profile presets (EV on separate circuit — no ev_night profile).
 DEFAULT_TOU_PROFILES: Final = {
     "thai_sunny": {
-        "description": "Sunny day — solar hours with 20% floor, discharge during peak",
+        "description": "Sunny day — solar charge by day, discharge peak, no grid charge",
         "slots": [
-            {"startTime": "00:00", "endTime": "04:00", "soc": 20, "chargeMode": "GRID_CHARGE"},
-            {"startTime": "04:00", "endTime": "09:00", "soc": 20, "chargeMode": "GRID_CHARGE"},
+            {"startTime": "00:00", "endTime": "04:00", "soc": 20, "chargeMode": "HOLD"},
+            {"startTime": "04:00", "endTime": "09:00", "soc": 20, "chargeMode": "HOLD"},
             {"startTime": "09:00", "endTime": "12:00", "soc": 20, "chargeMode": "SOLAR_CHARGE"},
             {"startTime": "12:00", "endTime": "17:00", "soc": 20, "chargeMode": "SOLAR_CHARGE"},
             {"startTime": "17:00", "endTime": "22:00", "soc": 20, "chargeMode": "DISCHARGE"},
-            {"startTime": "22:00", "endTime": "24:00", "soc": 20, "chargeMode": "GRID_CHARGE"},
+            {"startTime": "22:00", "endTime": "24:00", "soc": 20, "chargeMode": "HOLD"},
         ],
     },
     "thai_rainy": {
-        "description": "Rainy day — grid charge at night, hold reserve during day",
+        "description": "Rainy day — hold reserve, solar top-up if available, no grid charge",
         "slots": [
-            {"startTime": "00:00", "endTime": "04:00", "soc": 70, "chargeMode": "GRID_CHARGE"},
-            {"startTime": "04:00", "endTime": "09:00", "soc": 65, "chargeMode": "GRID_CHARGE"},
-            {"startTime": "09:00", "endTime": "12:00", "soc": 50, "chargeMode": "HOLD"},
-            {"startTime": "12:00", "endTime": "17:00", "soc": 50, "chargeMode": "HOLD"},
+            {"startTime": "00:00", "endTime": "04:00", "soc": 20, "chargeMode": "HOLD"},
+            {"startTime": "04:00", "endTime": "09:00", "soc": 20, "chargeMode": "HOLD"},
+            {"startTime": "09:00", "endTime": "12:00", "soc": 20, "chargeMode": "SOLAR_CHARGE"},
+            {"startTime": "12:00", "endTime": "17:00", "soc": 20, "chargeMode": "SOLAR_CHARGE"},
             {"startTime": "17:00", "endTime": "22:00", "soc": 20, "chargeMode": "DISCHARGE"},
-            {"startTime": "22:00", "endTime": "24:00", "soc": 70, "chargeMode": "GRID_CHARGE"},
+            {"startTime": "22:00", "endTime": "24:00", "soc": 20, "chargeMode": "HOLD"},
         ],
     },
     "thai_holiday": {
-        "description": "Public holiday — off-peak all day, moderate reserve",
+        "description": "Public holiday — off-peak hold, no grid charge",
         "slots": [
-            {"startTime": "00:00", "endTime": "04:00", "soc": 30, "chargeMode": "HOLD"},
-            {"startTime": "04:00", "endTime": "08:00", "soc": 30, "chargeMode": "HOLD"},
-            {"startTime": "08:00", "endTime": "12:00", "soc": 30, "chargeMode": "HOLD"},
-            {"startTime": "12:00", "endTime": "16:00", "soc": 30, "chargeMode": "HOLD"},
-            {"startTime": "16:00", "endTime": "20:00", "soc": 30, "chargeMode": "HOLD"},
-            {"startTime": "20:00", "endTime": "24:00", "soc": 30, "chargeMode": "HOLD"},
+            {"startTime": "00:00", "endTime": "04:00", "soc": 20, "chargeMode": "HOLD"},
+            {"startTime": "04:00", "endTime": "08:00", "soc": 20, "chargeMode": "HOLD"},
+            {"startTime": "08:00", "endTime": "12:00", "soc": 20, "chargeMode": "SOLAR_CHARGE"},
+            {"startTime": "12:00", "endTime": "16:00", "soc": 20, "chargeMode": "SOLAR_CHARGE"},
+            {"startTime": "16:00", "endTime": "20:00", "soc": 20, "chargeMode": "HOLD"},
+            {"startTime": "20:00", "endTime": "24:00", "soc": 20, "chargeMode": "HOLD"},
         ],
     },
 }

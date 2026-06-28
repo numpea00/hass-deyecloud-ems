@@ -132,15 +132,15 @@ Import blueprints via **Settings → Automations → Blueprints → Import Bluep
 ## Built-in TOU Profiles
 
 ### thai_sunny
-Solar day with 20% minimum reserve; discharge during peak down to 20%.
+Solar charge during the day, discharge during peak, hold at night — no grid charge.
 
 ### thai_rainy
-Grid charge at night, hold reserve during cloudy day.
+Same strategy as sunny; relies on available solar only, no grid charge.
 
 ### thai_holiday
-Flat moderate reserve (off-peak all day on holidays).
+Off-peak hold with solar top-up if available — no grid charge.
 
-Minimum battery reserve SOC is **20%** across profiles to reduce deep-discharge wear. EV charging on a separate circuit is not managed by these profiles.
+Minimum battery reserve SOC is **20%** across profiles. Grid charging is not used (EV is on a separate circuit).
 
 ## Cost tracking (optional HA helpers)
 
