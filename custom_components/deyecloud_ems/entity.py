@@ -9,6 +9,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import DeyeCloudEMSCoordinator
+from .sensor_helpers import find_data_value
 
 
 def thai_tou_device_info(entry: ConfigEntry) -> dict[str, Any]:
@@ -67,10 +68,12 @@ class DeyeCloudEMSDeviceEntity(CoordinatorEntity[DeyeCloudEMSCoordinator]):
 
     def _get_data_value(self, *keys: str) -> Any:
         data = self._device_payload().get("data", {})
+        value = find_data_value(data, *keys)
+        if value is not None:
+            return value
+
         config = self._device_payload().get("config", {})
         for key in keys:
-            if key in data and data[key] is not None:
-                return data[key]
             if key in config and config[key] is not None:
                 return config[key]
             system = config.get("system") or {}

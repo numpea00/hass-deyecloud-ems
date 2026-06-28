@@ -181,6 +181,7 @@ class DeyeCloudClient:
         ]
 
     async def get_device_latest_data(self, device_sns: list[str]) -> dict[str, dict[str, Any]]:
+        """Return latest device data with values and field metadata."""
         if not device_sns:
             return {}
 
@@ -192,12 +193,20 @@ class DeyeCloudClient:
                 device_sn = device_data.get("deviceSn")
                 if not device_sn:
                     continue
-                data_dict: dict[str, Any] = {}
+                values: dict[str, Any] = {}
+                fields: dict[str, dict[str, Any]] = {}
                 for item in device_data.get("dataList") or []:
                     key = item.get("key")
-                    if key:
-                        data_dict[key] = item.get("value")
-                parsed[device_sn] = data_dict
+                    if not key:
+                        continue
+                    value = item.get("value")
+                    values[key] = value
+                    fields[key] = {
+                        "value": value,
+                        "unit": item.get("unit"),
+                        "name": item.get("name"),
+                    }
+                parsed[device_sn] = {"values": values, "fields": fields}
         return parsed
 
     async def get_station_latest_data(self, station_id: str | int) -> dict[str, Any]:

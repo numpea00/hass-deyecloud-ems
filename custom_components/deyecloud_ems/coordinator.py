@@ -103,11 +103,28 @@ class DeyeCloudEMSCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
             devices_payload: dict[str, Any] = {}
             for device_sn in self.devices:
+                latest = device_data.get(device_sn, {})
+                if isinstance(latest, dict) and "values" in latest:
+                    values = latest.get("values", {})
+                    fields = latest.get("fields", {})
+                else:
+                    values = latest if isinstance(latest, dict) else {}
+                    fields = {
+                        key: {"value": value, "unit": None, "name": None}
+                        for key, value in values.items()
+                    }
                 devices_payload[device_sn] = {
                     "info": self.device_info.get(device_sn, {}),
-                    "data": device_data.get(device_sn, {}),
+                    "data": values,
+                    "fields": fields,
                     "config": self._device_configs.get(device_sn, {}),
                 }
+                if fields:
+                    _LOGGER.debug(
+                        "Device %s latest keys: %s",
+                        device_sn,
+                        ", ".join(sorted(fields.keys())),
+                    )
 
             return {
                 "stations": self.stations,

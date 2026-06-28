@@ -12,13 +12,27 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
-from .const import DOMAIN, PROFILE_MANAGER, SENSOR_DEFINITIONS
+from .const import DOMAIN, PROFILE_MANAGER
 from .coordinator import DeyeCloudEMSCoordinator
 from .entity import DeyeCloudEMSDeviceEntity, thai_tou_device_info
+from .sensor_helpers import (
+    PV1_POWER_KEYS,
+    PV2_POWER_KEYS,
+    LOAD_POWER_KEYS,
+    SOC_KEYS,
+    detect_device_class,
+    detect_state_class,
+    find_data_value,
+    format_sensor_name,
+    map_unit,
+    parse_numeric,
+    should_skip_sensor_key,
+)
 from .thai_tou import current_period, current_rate_thb, predict_soc_at_hour
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,20 +49,27 @@ async def async_setup_entry(
     entities: list[SensorEntity] = []
 
     for device_sn in coordinator.devices:
-        for sensor_key, definition in SENSOR_DEFINITIONS.items():
+        device_payload = coordinator.data.get("devices", {}).get(device_sn, {})
+        fields = device_payload.get("fields", {})
+        if not fields:
+            data = device_payload.get("data", {})
+            fields = {
+                key: {"value": value, "unit": None, "name": None}
+                for key, value in data.items()
+            }
+
+        for field_key, field_meta in fields.items():
+            if should_skip_sensor_key(field_key):
+                continue
             entities.append(
-                DeyeCloudEMSSensor(
+                DeyeCloudEMSFieldSensor(
                     coordinator,
                     device_sn,
-                    sensor_key,
-                    definition["name"],
-                    definition.get("unit"),
-                    definition.get("device_class"),
-                    definition.get("state_class"),
-                    definition["key"],
+                    field_key,
+                    field_meta,
                 )
             )
-        entities.append(DeyeCloudEMSTotalPvPowerSensor(coordinator, device_sn))
+
         entities.append(DeyeCloudEMSSocPredictedSensor(coordinator, device_sn))
 
     entities.extend(
@@ -62,86 +83,61 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class DeyeCloudEMSSensor(DeyeCloudEMSDeviceEntity, SensorEntity):
-    """Generic Deye monitoring sensor."""
+class DeyeCloudEMSFieldSensor(DeyeCloudEMSDeviceEntity, SensorEntity):
+    """Dynamic sensor created from Deye Cloud device/latest dataList."""
 
     def __init__(
         self,
         coordinator: DeyeCloudEMSCoordinator,
         device_sn: str,
-        key: str,
-        name: str,
-        unit: str | None,
-        device_class: str | None,
-        state_class: str | None,
-        data_key: str,
+        field_key: str,
+        field_meta: dict[str, Any],
     ) -> None:
-        super().__init__(coordinator, device_sn, key, name)
-        self._data_key = data_key
-        self._attr_native_unit_of_measurement = unit
-        if device_class:
-            self._attr_device_class = getattr(SensorDeviceClass, device_class.upper(), None) or device_class
-        if state_class:
-            self._attr_state_class = getattr(SensorStateClass, state_class.upper(), None) or state_class
+        api_name = field_meta.get("name")
+        super().__init__(
+            coordinator,
+            device_sn,
+            field_key,
+            format_sensor_name(field_key, api_name),
+        )
+        self._field_key = field_key
+        self._attr_native_unit_of_measurement = map_unit(field_key, field_meta.get("unit"))
+        self._attr_device_class = detect_device_class(field_key, api_name)
+        self._attr_state_class = detect_state_class(field_key)
 
     @property
     def native_value(self) -> StateType:
-        value = self._get_data_value(self._data_key)
-        if value is None:
-            return None
-        try:
-            return float(value)
-        except (TypeError, ValueError):
-            return value
-
-
-class DeyeCloudEMSTotalPvPowerSensor(DeyeCloudEMSDeviceEntity, SensorEntity):
-    """Total PV power (PV1 + PV2)."""
-
-    _attr_device_class = SensorDeviceClass.POWER
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = "W"
-
-    def __init__(self, coordinator: DeyeCloudEMSCoordinator, device_sn: str) -> None:
-        super().__init__(coordinator, device_sn, "total_pv_power", "Total PV Power")
-
-    @property
-    def native_value(self) -> StateType:
-        pv1 = self._get_data_value("PV1Power")
-        pv2 = self._get_data_value("PV2Power")
-        total = 0.0
-        found = False
-        for value in (pv1, pv2):
-            if value is not None:
-                try:
-                    total += float(value)
-                    found = True
-                except (TypeError, ValueError):
-                    pass
-        return total if found else None
+        fields = self._device_payload().get("fields", {})
+        field = fields.get(self._field_key, {})
+        value = field.get("value", self._device_payload().get("data", {}).get(self._field_key))
+        parsed = parse_numeric(value)
+        if isinstance(parsed, float):
+            return parsed
+        return parsed
 
 
 class DeyeCloudEMSSocPredictedSensor(DeyeCloudEMSDeviceEntity, SensorEntity):
     """Predicted battery SOC at 17:00."""
 
-    _attr_device_class = SensorDeviceClass.BATTERY
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = "%"
     _attr_icon = "mdi:battery-clock"
 
     def __init__(self, coordinator: DeyeCloudEMSCoordinator, device_sn: str) -> None:
         super().__init__(coordinator, device_sn, "battery_soc_predicted_17h", "Battery SOC Predicted 17:00")
+        self._attr_device_class = SensorDeviceClass.BATTERY
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_native_unit_of_measurement = PERCENTAGE
 
     @property
     def native_value(self) -> StateType:
-        soc = self._get_data_value("SOC")
+        data = self._device_payload().get("data", {})
+        soc = find_data_value(data, *SOC_KEYS)
         if soc is None:
             return None
-        pv_power = self._get_data_value("PV1Power") or 0
-        pv2 = self._get_data_value("PV2Power") or 0
-        load_power = self._get_data_value("LoadPower") or 0
+        pv1 = find_data_value(data, *PV1_POWER_KEYS) or 0
+        pv2 = find_data_value(data, *PV2_POWER_KEYS) or 0
+        load_power = find_data_value(data, *LOAD_POWER_KEYS) or 0
         try:
-            pv_total = float(pv_power) + float(pv2)
+            pv_total = float(pv1) + float(pv2)
             load = float(load_power)
             current_soc = float(soc)
         except (TypeError, ValueError):
