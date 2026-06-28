@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import DeyeCloudApiError
+from .config_helpers import normalize_energy_pattern, normalize_work_mode
 from .const import DOMAIN, ENERGY_PATTERNS, WORK_MODES
 from .coordinator import DeyeCloudEMSCoordinator
 from .entity import DeyeCloudEMSDeviceEntity
@@ -45,10 +46,20 @@ class DeyeCloudEMSWorkModeSelect(DeyeCloudEMSDeviceEntity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        value = self._get_data_value("workMode", "WorkMode", "SystemWorkMode")
-        if value in WORK_MODES:
-            return value
-        return None
+        value = self._get_config_value(
+            "workMode",
+            "WorkMode",
+            "SystemWorkMode",
+            "systemWorkMode",
+        )
+        if value is None:
+            value = self._get_data_value(
+                "workMode",
+                "WorkMode",
+                "SystemWorkMode",
+                "systemWorkMode",
+            )
+        return normalize_work_mode(value)
 
     async def async_select_option(self, option: str) -> None:
         if option not in WORK_MODES:
@@ -72,10 +83,20 @@ class DeyeCloudEMSEnergyPatternSelect(DeyeCloudEMSDeviceEntity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        value = self._get_data_value("energyPattern", "EnergyPattern", "SystemEnergyPattern")
-        if value in ENERGY_PATTERNS:
-            return value
-        return None
+        value = self._get_config_value(
+            "energyPattern",
+            "EnergyPattern",
+            "SystemEnergyPattern",
+            "systemEnergyPattern",
+        )
+        if value is None:
+            value = self._get_data_value(
+                "energyPattern",
+                "EnergyPattern",
+                "SystemEnergyPattern",
+                "systemEnergyPattern",
+            )
+        return normalize_energy_pattern(value)
 
     async def async_select_option(self, option: str) -> None:
         if option not in ENERGY_PATTERNS:

@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import DeyeCloudApiError
+from .config_helpers import get_current_tou_soc, normalize_number
 from .const import DOMAIN, PROFILE_MANAGER
 from .coordinator import DeyeCloudEMSCoordinator
 from .entity import DeyeCloudEMSDeviceEntity
@@ -52,8 +53,18 @@ class DeyeCloudEMSMaxChargeCurrentNumber(DeyeCloudEMSDeviceEntity, NumberEntity)
 
     @property
     def native_value(self) -> float | None:
-        value = self._get_data_value("maxChargeCurrent", "MaxChargeCurrent")
-        return float(value) if value is not None else None
+        value = self._get_config_value(
+            "maxChargeCurrent",
+            "MaxChargeCurrent",
+            "chargeCurrentLimit",
+        )
+        if value is None:
+            value = self._get_data_value(
+                "maxChargeCurrent",
+                "MaxChargeCurrent",
+                "chargeCurrentLimit",
+            )
+        return normalize_number(value)
 
     async def async_set_native_value(self, value: float) -> None:
         try:
@@ -81,8 +92,18 @@ class DeyeCloudEMSMaxDischargeCurrentNumber(DeyeCloudEMSDeviceEntity, NumberEnti
 
     @property
     def native_value(self) -> float | None:
-        value = self._get_data_value("maxDischargeCurrent", "MaxDischargeCurrent")
-        return float(value) if value is not None else None
+        value = self._get_config_value(
+            "maxDischargeCurrent",
+            "MaxDischargeCurrent",
+            "dischargeCurrentLimit",
+        )
+        if value is None:
+            value = self._get_data_value(
+                "maxDischargeCurrent",
+                "MaxDischargeCurrent",
+                "dischargeCurrentLimit",
+            )
+        return normalize_number(value)
 
     async def async_set_native_value(self, value: float) -> None:
         try:
@@ -110,8 +131,10 @@ class DeyeCloudEMSMaxSellPowerNumber(DeyeCloudEMSDeviceEntity, NumberEntity):
 
     @property
     def native_value(self) -> float | None:
-        value = self._get_data_value("maxSellPower", "MaxSellPower")
-        return float(value) if value is not None else None
+        value = self._get_config_value("maxSellPower", "MaxSellPower")
+        if value is None:
+            value = self._get_data_value("maxSellPower", "MaxSellPower")
+        return normalize_number(value)
 
     async def async_set_native_value(self, value: float) -> None:
         try:
@@ -140,23 +163,14 @@ class DeyeCloudEMSBatteryReserveNumber(DeyeCloudEMSDeviceEntity, NumberEntity):
     ) -> None:
         super().__init__(coordinator, device_sn, "battery_reserve_soc", "Battery Reserve SOC")
         self._profile_manager = profile_manager
-        self._local_value: float | None = None
 
     @property
     def native_value(self) -> float | None:
-        if self._local_value is not None:
-            return self._local_value
         tou = self._device_payload().get("config", {}).get("tou") or {}
-        items = tou.get("timeUseSettingItems") or tou.get("time_use_setting_items") or []
-        if items:
-            try:
-                return float(items[0].get("soc", 20))
-            except (TypeError, ValueError):
-                pass
-        return 20.0
+        soc = get_current_tou_soc(tou)
+        return soc if soc is not None else 20.0
 
     async def async_set_native_value(self, value: float) -> None:
-        self._local_value = value
         active = self._profile_manager.active_profile or "thai_sunny"
         slots = self._profile_manager.apply_reserve_to_slots(
             self._profile_manager.get_profile_slots(active),

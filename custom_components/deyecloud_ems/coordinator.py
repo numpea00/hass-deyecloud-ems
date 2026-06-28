@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import DeyeCloudApiError, DeyeCloudClient
+from .config_helpers import merge_device_config
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,20 +49,30 @@ class DeyeCloudEMSCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_fetch_device_configs(self) -> dict[str, dict[str, Any]]:
         device_configs: dict[str, dict[str, Any]] = {}
         for device_sn in self.devices:
-            config: dict[str, Any] = {}
+            system_config: dict[str, Any] | None = None
+            battery_config: dict[str, Any] | None = None
+            tou_config: dict[str, Any] | None = None
             try:
-                config["battery"] = await self.client.get_battery_config(device_sn)
-            except DeyeCloudApiError:
-                pass
+                system_config = await self.client.get_system_config(device_sn)
+            except DeyeCloudApiError as err:
+                _LOGGER.debug("System config failed for %s: %s", device_sn, err)
             try:
-                config["system"] = await self.client.get_system_config(device_sn)
-            except DeyeCloudApiError:
-                pass
+                battery_config = await self.client.get_battery_config(device_sn)
+            except DeyeCloudApiError as err:
+                _LOGGER.debug("Battery config failed for %s: %s", device_sn, err)
             try:
-                config["tou"] = await self.client.get_tou_config(device_sn)
-            except DeyeCloudApiError:
-                pass
-            device_configs[device_sn] = config
+                tou_config = await self.client.get_tou_config(device_sn)
+            except DeyeCloudApiError as err:
+                _LOGGER.debug("TOU config failed for %s: %s", device_sn, err)
+
+            merged = merge_device_config(system_config, battery_config, tou_config)
+            device_configs[device_sn] = merged
+            if merged:
+                _LOGGER.debug(
+                    "Device %s config keys: %s",
+                    device_sn,
+                    ", ".join(sorted(key for key in merged if not key.startswith("_"))),
+                )
         return device_configs
 
     async def _async_update_data(self) -> dict[str, Any]:

@@ -7,6 +7,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .config_helpers import find_config_value
 from .const import DOMAIN
 from .coordinator import DeyeCloudEMSCoordinator
 from .sensor_helpers import find_data_value
@@ -67,19 +68,14 @@ class DeyeCloudEMSDeviceEntity(CoordinatorEntity[DeyeCloudEMSCoordinator]):
         )
 
     def _get_data_value(self, *keys: str) -> Any:
+        """Read telemetry first, then fall back to config."""
         data = self._device_payload().get("data", {})
         value = find_data_value(data, *keys)
         if value is not None:
             return value
+        return self._get_config_value(*keys)
 
+    def _get_config_value(self, *keys: str) -> Any:
+        """Read control/settings values from merged device config."""
         config = self._device_payload().get("config", {})
-        for key in keys:
-            if key in config and config[key] is not None:
-                return config[key]
-            system = config.get("system") or {}
-            battery = config.get("battery") or {}
-            if key in system and system[key] is not None:
-                return system[key]
-            if key in battery and battery[key] is not None:
-                return battery[key]
-        return None
+        return find_config_value(config, *keys)

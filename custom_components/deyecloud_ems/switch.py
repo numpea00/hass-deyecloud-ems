@@ -10,9 +10,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .api import DeyeCloudApiError
+from .config_helpers import normalize_bool
 from .const import DOMAIN
 from .coordinator import DeyeCloudEMSCoordinator
 from .entity import DeyeCloudEMSDeviceEntity
+from .sensor_helpers import SOC_KEYS, find_data_value
 from .thai_tou import is_peak
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,21 +47,21 @@ class DeyeCloudEMSSolarSellSwitch(DeyeCloudEMSDeviceEntity, SwitchEntity):
 
     @property
     def is_on(self) -> bool:
-        value = self._get_data_value("SolarSell", "solarSell", "SolarSellEnable")
-        if isinstance(value, bool):
-            return value
-        if isinstance(value, str):
-            return value.lower() in {"on", "true", "1", "enabled"}
-        if value is not None:
-            try:
-                return float(value) > 0
-            except (TypeError, ValueError):
-                return False
-        return False
+        value = self._get_config_value(
+            "solarSellEnable",
+            "SolarSellEnable",
+            "solarSell",
+            "SolarSell",
+        )
+        if value is None:
+            value = self._get_data_value("SolarSell", "solarSell", "SolarSellEnable")
+        normalized = normalize_bool(value)
+        return normalized if normalized is not None else False
 
     @property
     def extra_state_attributes(self) -> dict:
-        soc = self._get_data_value("SOC")
+        data = self._device_payload().get("data", {})
+        soc = find_data_value(data, *SOC_KEYS)
         return {
             "smart_sell_recommended": (
                 soc is not None
@@ -96,12 +98,23 @@ class DeyeCloudEMSBatteryChargeSwitch(DeyeCloudEMSDeviceEntity, SwitchEntity):
 
     @property
     def is_on(self) -> bool:
-        value = self._get_data_value("BatteryChargeMode", "GridCharge", "gridCharge")
-        if isinstance(value, bool):
-            return value
-        if isinstance(value, str):
-            return value.lower() in {"on", "true", "1", "enabled", "grid_charge"}
-        return False
+        value = self._get_config_value(
+            "enableGridCharge",
+            "gridChargeEnable",
+            "gridCharge",
+            "GridCharge",
+            "BatteryChargeMode",
+            "batteryChargeMode",
+        )
+        if value is None:
+            value = self._get_data_value(
+                "BatteryChargeMode",
+                "GridCharge",
+                "gridCharge",
+                "enableGridCharge",
+            )
+        normalized = normalize_bool(value)
+        return normalized if normalized is not None else False
 
     async def async_turn_on(self, **kwargs) -> None:
         await self._set_charge_mode(True)
