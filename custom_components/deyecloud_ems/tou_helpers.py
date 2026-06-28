@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-DEFAULT_TOU_POWER = 5000
+# ~0.2C for 51.2V / 314Ah class batteries (~16 kWh); gentle on LiFePO4 cycle life.
+DEFAULT_TOU_POWER = 3200
 DEYE_TOU_SLOT_COUNT = 6
 # Spread used when fewer than 6 profile slots must be expanded for the API.
 DEFAULT_TOU_TIMES = ("00:00", "04:00", "08:00", "12:00", "16:00", "20:00")
