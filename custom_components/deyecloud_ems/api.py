@@ -87,12 +87,20 @@ class DeyeCloudClient:
             async with asyncio.timeout(API_TIMEOUT):
                 if method.upper() == "GET":
                     async with session.get(url, params=payload, headers=headers) as response:
-                        response.raise_for_status()
-                        result = await response.json()
+                        if response.status >= 400:
+                            body = await response.text()
+                            raise DeyeCloudApiError(
+                                f"HTTP {response.status}: {body or response.reason}"
+                            )
+                        result = await response.json(content_type=None)
                 else:
                     async with session.post(url, json=payload, headers=headers) as response:
-                        response.raise_for_status()
-                        result = await response.json()
+                        if response.status >= 400:
+                            body = await response.text()
+                            raise DeyeCloudApiError(
+                                f"HTTP {response.status}: {body or response.reason}"
+                            )
+                        result = await response.json(content_type=None)
         except aiohttp.ClientError as err:
             raise DeyeCloudApiError(f"Connection error: {err}") from err
         except asyncio.TimeoutError as err:
@@ -273,12 +281,20 @@ class DeyeCloudClient:
         tou_items: list[dict[str, Any]],
         timeout_seconds: int = 30,
     ) -> dict[str, Any]:
+        from .tou_helpers import normalize_tou_items_for_api
+
+        normalized_items = normalize_tou_items_for_api(tou_items)
+        _LOGGER.debug(
+            "TOU update for %s: %s",
+            device_sn,
+            normalized_items,
+        )
         return await self._request(
             "POST",
             "/order/sys/tou/update",
             {
                 "deviceSn": device_sn,
-                "timeUseSettingItems": tou_items,
+                "timeUseSettingItems": normalized_items,
                 "timeoutSeconds": timeout_seconds,
             },
         )

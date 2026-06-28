@@ -14,6 +14,7 @@ from homeassistant.helpers import device_registry as dr
 from .api import DeyeCloudApiError
 from .const import DOMAIN, EVENT_PROFILE_APPLIED
 from .coordinator import DeyeCloudEMSCoordinator
+from .tou_helpers import apply_soc_to_tou_items
 from .tou_profile import TouProfileManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -136,17 +137,24 @@ def async_setup_services(hass: HomeAssistant) -> None:
             return
         coordinator, profile_manager, device_sn = ctx
         soc = int(call.data["soc"])
-        active = profile_manager.active_profile
-        if active:
-            slots = profile_manager.apply_reserve_to_slots(
-                profile_manager.get_profile_slots(active), soc
+        tou = coordinator.data.get("devices", {}).get(device_sn, {}).get("config", {}).get("tou") or {}
+        existing_items = (
+            tou.get("timeUseSettingItems")
+            or tou.get("time_use_setting_items")
+            or []
+        )
+        if existing_items:
+            items = apply_soc_to_tou_items(existing_items, soc)
+        elif profile_manager.active_profile:
+            items = profile_manager.apply_reserve_to_slots(
+                profile_manager.get_profile_slots(profile_manager.active_profile), soc
             )
         else:
-            slots = [{"startTime": "00:00", "endTime": "24:00", "soc": soc, "chargeMode": "HOLD"}]
+            items = [{"startTime": "00:00", "endTime": "24:00", "soc": soc, "chargeMode": "HOLD"}]
         try:
-            await coordinator.client.set_tou_config(device_sn, slots)
+            await coordinator.client.set_tou_config(device_sn, items)
             await _refresh_after_control(coordinator)
-        except DeyeCloudApiError as err:
+        except (DeyeCloudApiError, ValueError) as err:
             _LOGGER.error("set_reserve failed: %s", err)
 
     async def handle_smart_reserve(call: ServiceCall) -> None:

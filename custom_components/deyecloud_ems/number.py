@@ -12,6 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .api import DeyeCloudApiError
 from .config_helpers import get_current_tou_soc, normalize_number
 from .const import DOMAIN, PROFILE_MANAGER
+from .tou_helpers import apply_soc_to_tou_items
 from .coordinator import DeyeCloudEMSCoordinator
 from .entity import DeyeCloudEMSDeviceEntity
 
@@ -171,14 +172,23 @@ class DeyeCloudEMSBatteryReserveNumber(DeyeCloudEMSDeviceEntity, NumberEntity):
         return soc if soc is not None else 20.0
 
     async def async_set_native_value(self, value: float) -> None:
-        active = self._profile_manager.active_profile or "thai_sunny"
-        slots = self._profile_manager.apply_reserve_to_slots(
-            self._profile_manager.get_profile_slots(active),
-            int(value),
+        tou = self._device_payload().get("config", {}).get("tou") or {}
+        existing_items = (
+            tou.get("timeUseSettingItems")
+            or tou.get("time_use_setting_items")
+            or []
         )
+        if existing_items:
+            items = apply_soc_to_tou_items(existing_items, int(value))
+        else:
+            active = self._profile_manager.active_profile or "thai_sunny"
+            items = self._profile_manager.apply_reserve_to_slots(
+                self._profile_manager.get_profile_slots(active),
+                int(value),
+            )
         try:
-            await self.coordinator.client.set_tou_config(self._device_sn, slots)
+            await self.coordinator.client.set_tou_config(self._device_sn, items)
             self.coordinator.async_invalidate_config_cache()
             await self.coordinator.async_request_refresh()
-        except DeyeCloudApiError as err:
+        except (DeyeCloudApiError, ValueError) as err:
             _LOGGER.error("Failed to set battery reserve SOC: %s", err)
