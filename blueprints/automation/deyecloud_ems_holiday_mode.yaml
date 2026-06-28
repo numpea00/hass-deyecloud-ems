@@ -1,0 +1,38 @@
+blueprint:
+  name: Deye Cloud EMS - Holiday Mode
+  description: Apply flat holiday TOU profile when Thai public holiday is detected.
+  domain: automation
+  source_url: https://github.com/num_p/hass-deyecloud-ems
+  author: Deye Cloud EMS
+  input:
+    device_id:
+      name: Deye inverter device
+      selector:
+        device:
+          integration: deyecloud_ems
+    is_holiday_sensor:
+      name: Is Thai Holiday sensor
+      selector:
+        entity:
+          domain: binary_sensor
+
+trigger:
+  - platform: state
+    entity_id: !input is_holiday_sensor
+    to: "on"
+
+action:
+  - service: deyecloud_ems.apply_tou_profile
+    data:
+      device_id: !input device_id
+      profile_name: thai_holiday
+  - service: deyecloud_ems.set_work_mode
+    data:
+      device_id: !input device_id
+      work_mode: ZERO_EXPORT_TO_LOAD
+  - service: deyecloud_ems.set_energy_pattern
+    data:
+      device_id: !input device_id
+      energy_pattern: BATTERY_FIRST
+
+mode: single

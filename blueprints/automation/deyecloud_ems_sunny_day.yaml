@@ -1,0 +1,34 @@
+blueprint:
+  name: Deye Cloud EMS - Sunny Day
+  description: Manually or on-trigger apply the sunny day TOU profile.
+  domain: automation
+  source_url: https://github.com/num_p/hass-deyecloud-ems
+  author: Deye Cloud EMS
+  input:
+    device_id:
+      name: Deye inverter device
+      selector:
+        device:
+          integration: deyecloud_ems
+    trigger_input_boolean:
+      name: Trigger input boolean
+      selector:
+        entity:
+          domain: input_boolean
+
+trigger:
+  - platform: state
+    entity_id: !input trigger_input_boolean
+    to: "on"
+
+action:
+  - service: deyecloud_ems.apply_tou_profile
+    data:
+      device_id: !input device_id
+      profile_name: thai_sunny
+  - service: deyecloud_ems.set_work_mode
+    data:
+      device_id: !input device_id
+      work_mode: SELLING_FIRST
+
+mode: single

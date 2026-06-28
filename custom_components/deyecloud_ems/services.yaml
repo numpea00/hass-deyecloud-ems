@@ -1,0 +1,251 @@
+set_tou:
+  name: Set TOU
+  description: Push a raw TOU schedule to the inverter.
+  fields:
+    device_id:
+      name: Device
+      description: Target inverter device from the device registry.
+      required: false
+      selector:
+        device:
+          integration: deyecloud_ems
+    device_sn:
+      name: Device serial number
+      description: Alternative device identifier.
+      required: false
+      example: "2412345678"
+    tou_items:
+      name: TOU items
+      description: List of TOU time slots.
+      required: true
+      example:
+        - startTime: "00:00"
+          endTime: "09:00"
+          soc: 20
+          chargeMode: GRID_CHARGE
+    timeout_seconds:
+      name: Timeout seconds
+      description: Command timeout in seconds.
+      required: false
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 120
+          step: 1
+
+apply_tou_profile:
+  name: Apply TOU profile
+  description: Apply a named TOU profile (thai_sunny, thai_rainy, thai_holiday, ev_night).
+  fields:
+    device_id:
+      name: Device
+      required: false
+      selector:
+        device:
+          integration: deyecloud_ems
+    device_sn:
+      name: Device serial number
+      required: false
+    profile_name:
+      name: Profile name
+      required: true
+      example: thai_sunny
+
+set_reserve:
+  name: Set reserve SOC
+  description: Set battery reserve SOC on the active TOU profile.
+  fields:
+    device_id:
+      name: Device
+      required: false
+      selector:
+        device:
+          integration: deyecloud_ems
+    device_sn:
+      name: Device serial number
+      required: false
+    soc:
+      name: Reserve SOC
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+
+smart_reserve:
+  name: Smart reserve
+  description: Calculate reserve SOC from solar forecast and target energy.
+  fields:
+    device_id:
+      name: Device
+      required: false
+      selector:
+        device:
+          integration: deyecloud_ems
+    device_sn:
+      name: Device serial number
+      required: false
+    forecast_kwh:
+      name: Forecast kWh
+      required: true
+      selector:
+        number:
+          min: 0
+          step: 0.1
+    target_kwh:
+      name: Target kWh
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          step: 0.1
+    battery_capacity_kwh:
+      name: Battery capacity kWh
+      required: false
+      default: 10
+      selector:
+        number:
+          min: 1
+          step: 0.1
+
+smart_night_charge:
+  name: Smart night charge
+  description: Decide whether to grid-charge tonight based on tomorrow solar forecast.
+  fields:
+    device_id:
+      name: Device
+      required: false
+      selector:
+        device:
+          integration: deyecloud_ems
+    device_sn:
+      name: Device serial number
+      required: false
+    forecast_kwh_tomorrow:
+      name: Forecast kWh tomorrow
+      required: true
+      selector:
+        number:
+          min: 0
+          step: 0.1
+    daily_consumption_kwh:
+      name: Daily consumption kWh
+      required: false
+      default: 15
+      selector:
+        number:
+          min: 0
+          step: 0.1
+    battery_capacity_kwh:
+      name: Battery capacity kWh
+      required: false
+      default: 10
+      selector:
+        number:
+          min: 1
+          step: 0.1
+    current_soc:
+      name: Current SOC
+      required: false
+      default: 50
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+    profile_name:
+      name: Profile name
+      required: false
+      default: thai_rainy
+
+set_battery_parameter:
+  name: Set battery parameter
+  description: Set an arbitrary battery parameter on the inverter.
+  fields:
+    device_id:
+      name: Device
+      required: false
+      selector:
+        device:
+          integration: deyecloud_ems
+    device_sn:
+      name: Device serial number
+      required: false
+    parameter:
+      name: Parameter name
+      required: true
+      example: maxChargeCurrent
+    value:
+      name: Value
+      required: true
+      selector:
+        number:
+          step: 1
+
+set_work_mode:
+  name: Set work mode
+  description: Set inverter work mode.
+  fields:
+    device_id:
+      name: Device
+      required: false
+      selector:
+        device:
+          integration: deyecloud_ems
+    device_sn:
+      name: Device serial number
+      required: false
+    work_mode:
+      name: Work mode
+      required: true
+      selector:
+        select:
+          options:
+            - SELLING_FIRST
+            - ZERO_EXPORT_TO_LOAD
+            - ZERO_EXPORT_TO_CT
+
+set_energy_pattern:
+  name: Set energy pattern
+  description: Set inverter energy pattern.
+  fields:
+    device_id:
+      name: Device
+      required: false
+      selector:
+        device:
+          integration: deyecloud_ems
+    device_sn:
+      name: Device serial number
+      required: false
+    energy_pattern:
+      name: Energy pattern
+      required: true
+      selector:
+        select:
+          options:
+            - BATTERY_FIRST
+            - LOAD_FIRST
+
+set_solar_sell:
+  name: Set solar sell
+  description: Enable or disable solar sell.
+  fields:
+    device_id:
+      name: Device
+      required: false
+      selector:
+        device:
+          integration: deyecloud_ems
+    device_sn:
+      name: Device serial number
+      required: false
+    enabled:
+      name: Enabled
+      required: true
+      selector:
+        boolean:

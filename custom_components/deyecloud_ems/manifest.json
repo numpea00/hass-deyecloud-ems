@@ -1,0 +1,13 @@
+{
+  "domain": "deyecloud_ems",
+  "name": "Deye Cloud EMS",
+  "codeowners": ["@num_p"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/num_p/hass-deyecloud-ems",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/num_p/hass-deyecloud-ems/issues",
+  "requirements": [],
+  "version": "0.1.0",
+  "homeassistant": "2024.1.0"
+}

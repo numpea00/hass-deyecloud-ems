@@ -1,0 +1,142 @@
+blueprint:
+  name: Deye Cloud EMS - Thai Daily Smart
+  description: >-
+    Four-step Thai TOU automation: morning forecast profile, mid-day solar check,
+    peak discharge strategy, and off-peak reset.
+  domain: automation
+  source_url: https://github.com/num_p/hass-deyecloud-ems
+  author: Deye Cloud EMS
+  input:
+    device_id:
+      name: Deye inverter device
+      selector:
+        device:
+          integration: deyecloud_ems
+    solar_forecast_sensor:
+      name: Solar forecast sensor (kWh today)
+      default: sensor.solcast_forecast_today
+      selector:
+        entity:
+          domain: sensor
+    expected_solar_kwh:
+      name: Sunny day threshold (kWh)
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 100
+          step: 0.5
+    high_soc_threshold:
+      name: High SOC threshold for peak sell (%)
+      default: 80
+      selector:
+        number:
+          min: 50
+          max: 100
+          step: 1
+    battery_soc_sensor:
+      name: Battery SOC sensor
+      selector:
+        entity:
+          domain: sensor
+          device_class: battery
+    pv_power_sensor:
+      name: Total PV power sensor (W)
+      selector:
+        entity:
+          domain: sensor
+          device_class: power
+
+trigger:
+  - platform: time
+    at: "06:00:00"
+    id: morning
+  - platform: time
+    at: "11:00:00"
+    id: midday
+  - platform: time
+    at: "17:00:00"
+    id: peak
+  - platform: time
+    at: "22:00:00"
+    id: offpeak
+
+variables:
+  device_id: !input device_id
+  expected_solar_kwh: !input expected_solar_kwh
+  high_soc_threshold: !input high_soc_threshold
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: morning
+        sequence:
+          - variables:
+              forecast: "{{ states(!input solar_forecast_sensor) | float(0) }}"
+              profile: "{{ 'thai_sunny' if forecast > expected_solar_kwh else 'thai_rainy' }}"
+          - service: deyecloud_ems.apply_tou_profile
+            data:
+              device_id: !input device_id
+              profile_name: "{{ profile }}"
+      - conditions:
+          - condition: trigger
+            id: midday
+        sequence:
+          - variables:
+              expected_w: "{{ (expected_solar_kwh / 8) * 1000 }}"
+              current_pv: "{{ states(!input pv_power_sensor) | float(0) }}"
+          - if:
+              - condition: template
+                value_template: "{{ current_pv < expected_w * 0.3 }}"
+            then:
+              - service: deyecloud_ems.set_reserve
+                data:
+                  device_id: !input device_id
+                  soc: 50
+      - conditions:
+          - condition: trigger
+            id: peak
+        sequence:
+          - variables:
+              soc: "{{ states(!input battery_soc_sensor) | float(0) }}"
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ soc >= high_soc_threshold }}"
+                sequence:
+                  - service: deyecloud_ems.set_work_mode
+                    data:
+                      device_id: !input device_id
+                      work_mode: SELLING_FIRST
+              - conditions:
+                  - condition: template
+                    value_template: "{{ soc >= 40 }}"
+                sequence:
+                  - service: deyecloud_ems.set_energy_pattern
+                    data:
+                      device_id: !input device_id
+                      energy_pattern: BATTERY_FIRST
+            default:
+              - service: deyecloud_ems.set_energy_pattern
+                data:
+                  device_id: !input device_id
+                  energy_pattern: LOAD_FIRST
+      - conditions:
+          - condition: trigger
+            id: offpeak
+        sequence:
+          - service: deyecloud_ems.set_work_mode
+            data:
+              device_id: !input device_id
+              work_mode: ZERO_EXPORT_TO_LOAD
+          - service: deyecloud_ems.set_energy_pattern
+            data:
+              device_id: !input device_id
+              energy_pattern: BATTERY_FIRST
+          - service: deyecloud_ems.set_reserve
+            data:
+              device_id: !input device_id
+              soc: 20
+
+mode: single

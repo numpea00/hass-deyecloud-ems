@@ -1,0 +1,39 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Deye Cloud EMS",
+        "description": "Connect to Deye Cloud OpenAPI for monitoring and EMS control.",
+        "data": {
+          "username": "Username or email",
+          "password": "Password",
+          "app_id": "App ID",
+          "app_secret": "App Secret",
+          "base_url": "Base URL",
+          "company_id": "Company ID (optional)",
+          "scan_interval": "Update interval (seconds)"
+        }
+      },
+      "init": {
+        "title": "Deye Cloud EMS options",
+        "data": {
+          "username": "Username or email",
+          "password": "Password",
+          "app_id": "App ID",
+          "app_secret": "App Secret",
+          "base_url": "Base URL",
+          "company_id": "Company ID (optional)",
+          "scan_interval": "Update interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect or authenticate with Deye Cloud.",
+      "no_stations": "Credentials are valid but no stations were found.",
+      "unknown": "Unexpected error during setup."
+    },
+    "abort": {
+      "already_configured": "This account is already configured."
+    }
+  }
+}

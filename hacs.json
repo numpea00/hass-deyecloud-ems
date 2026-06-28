@@ -1,0 +1,7 @@
+{
+  "name": "Deye Cloud EMS",
+  "content_in_root": false,
+  "filename": "deyecloud_ems",
+  "homeassistant": "2024.1.0",
+  "render_readme": true
+}
