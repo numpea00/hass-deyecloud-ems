@@ -59,8 +59,10 @@ DEFAULT_TOU_PROFILES: Final = {
     "thai_sunny": {
         "description": "Sunny day — low reserve during solar, discharge during peak",
         "slots": [
-            {"startTime": "00:00", "endTime": "09:00", "soc": 20, "chargeMode": "GRID_CHARGE"},
-            {"startTime": "09:00", "endTime": "17:00", "soc": 5, "chargeMode": "SOLAR_CHARGE"},
+            {"startTime": "00:00", "endTime": "04:00", "soc": 20, "chargeMode": "GRID_CHARGE"},
+            {"startTime": "04:00", "endTime": "09:00", "soc": 15, "chargeMode": "GRID_CHARGE"},
+            {"startTime": "09:00", "endTime": "12:00", "soc": 5, "chargeMode": "SOLAR_CHARGE"},
+            {"startTime": "12:00", "endTime": "17:00", "soc": 5, "chargeMode": "SOLAR_CHARGE"},
             {"startTime": "17:00", "endTime": "22:00", "soc": 5, "chargeMode": "DISCHARGE"},
             {"startTime": "22:00", "endTime": "24:00", "soc": 20, "chargeMode": "GRID_CHARGE"},
         ],
@@ -68,8 +70,10 @@ DEFAULT_TOU_PROFILES: Final = {
     "thai_rainy": {
         "description": "Rainy day — grid charge at night, hold reserve during day",
         "slots": [
-            {"startTime": "00:00", "endTime": "09:00", "soc": 70, "chargeMode": "GRID_CHARGE"},
-            {"startTime": "09:00", "endTime": "17:00", "soc": 50, "chargeMode": "HOLD"},
+            {"startTime": "00:00", "endTime": "04:00", "soc": 70, "chargeMode": "GRID_CHARGE"},
+            {"startTime": "04:00", "endTime": "09:00", "soc": 65, "chargeMode": "GRID_CHARGE"},
+            {"startTime": "09:00", "endTime": "12:00", "soc": 50, "chargeMode": "HOLD"},
+            {"startTime": "12:00", "endTime": "17:00", "soc": 50, "chargeMode": "HOLD"},
             {"startTime": "17:00", "endTime": "22:00", "soc": 30, "chargeMode": "DISCHARGE"},
             {"startTime": "22:00", "endTime": "24:00", "soc": 70, "chargeMode": "GRID_CHARGE"},
         ],
@@ -77,14 +81,22 @@ DEFAULT_TOU_PROFILES: Final = {
     "thai_holiday": {
         "description": "Public holiday — off-peak all day, moderate reserve",
         "slots": [
-            {"startTime": "00:00", "endTime": "24:00", "soc": 30, "chargeMode": "HOLD"},
+            {"startTime": "00:00", "endTime": "04:00", "soc": 30, "chargeMode": "HOLD"},
+            {"startTime": "04:00", "endTime": "08:00", "soc": 30, "chargeMode": "HOLD"},
+            {"startTime": "08:00", "endTime": "12:00", "soc": 30, "chargeMode": "HOLD"},
+            {"startTime": "12:00", "endTime": "16:00", "soc": 30, "chargeMode": "HOLD"},
+            {"startTime": "16:00", "endTime": "20:00", "soc": 30, "chargeMode": "HOLD"},
+            {"startTime": "20:00", "endTime": "24:00", "soc": 30, "chargeMode": "HOLD"},
         ],
     },
     "ev_night": {
         "description": "EV night charging — high off-peak reserve for EV + battery",
         "slots": [
-            {"startTime": "00:00", "endTime": "09:00", "soc": 90, "chargeMode": "GRID_CHARGE"},
-            {"startTime": "09:00", "endTime": "22:00", "soc": 40, "chargeMode": "HOLD"},
+            {"startTime": "00:00", "endTime": "04:00", "soc": 90, "chargeMode": "GRID_CHARGE"},
+            {"startTime": "04:00", "endTime": "09:00", "soc": 85, "chargeMode": "GRID_CHARGE"},
+            {"startTime": "09:00", "endTime": "12:00", "soc": 40, "chargeMode": "HOLD"},
+            {"startTime": "12:00", "endTime": "17:00", "soc": 40, "chargeMode": "HOLD"},
+            {"startTime": "17:00", "endTime": "22:00", "soc": 40, "chargeMode": "HOLD"},
             {"startTime": "22:00", "endTime": "24:00", "soc": 90, "chargeMode": "GRID_CHARGE"},
         ],
     },
