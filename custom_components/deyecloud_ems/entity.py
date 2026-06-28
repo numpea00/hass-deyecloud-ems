@@ -62,10 +62,9 @@ class DeyeCloudEMSDeviceEntity(CoordinatorEntity[DeyeCloudEMSCoordinator]):
 
     @property
     def available(self) -> bool:
-        return (
-            self.coordinator.last_update_success
-            and self._device_sn in self.coordinator.data.get("devices", {})
-        )
+        """Stay available with cached data when a poll fails transiently."""
+        devices = self.coordinator.data.get("devices", {}) if self.coordinator.data else {}
+        return bool(devices) and self._device_sn in devices
 
     def _get_data_value(self, *keys: str) -> Any:
         """Read telemetry first, then fall back to config."""
